@@ -1,0 +1,82 @@
+CREATE TABLE PuntoEntity (
+    id INTEGER NOT NULL PRIMARY KEY,
+    razonSocial TEXT NOT NULL,
+    direccion TEXT NOT NULL,
+    zona TEXT NOT NULL,
+    materialHabitual TEXT NOT NULL,
+    secuencia INTEGER AS kotlin.Int NOT NULL,
+    atendido INTEGER NOT NULL DEFAULT 0
+);
+
+selectAllPuntos:
+SELECT * FROM PuntoEntity ORDER BY secuencia ASC;
+
+insertPunto:
+INSERT OR REPLACE INTO PuntoEntity(id, razonSocial, direccion, zona, materialHabitual, secuencia, atendido)
+VALUES (?, ?, ?, ?, ?, ?, ?);
+
+clearPuntos:
+DELETE FROM PuntoEntity;
+
+updatePuntoAtendido:
+UPDATE PuntoEntity SET atendido = :atendido WHERE id = :id;
+
+CREATE TABLE RutaEntity (
+    id INTEGER NOT NULL PRIMARY KEY,
+    fecha TEXT NOT NULL,
+    estado TEXT NOT NULL,
+    ultimaSincronizacion TEXT
+);
+
+getRutaHoy:
+SELECT * FROM RutaEntity LIMIT 1;
+
+insertRuta:
+INSERT OR REPLACE INTO RutaEntity(id, fecha, estado, ultimaSincronizacion)
+VALUES (?, ?, ?, ?);
+
+clearRuta:
+DELETE FROM RutaEntity;
+
+updateEstadoRuta:
+UPDATE RutaEntity SET estado = :estado WHERE id = :id;
+
+CREATE TABLE PesajeEntity (
+    id INTEGER NOT NULL PRIMARY KEY,
+    puntoId INTEGER NOT NULL,
+    fechaHora TEXT NOT NULL,
+    material TEXT NOT NULL,
+    pesoBruto REAL NOT NULL,
+    tara REAL NOT NULL,
+    pesoNeto REAL NOT NULL,
+    operario TEXT NOT NULL,
+    estadoTipo TEXT NOT NULL,
+    motivoAnulacion TEXT,
+    pendiente INTEGER NOT NULL DEFAULT 0,
+    observacion TEXT
+);
+
+getPesajesByPunto:
+SELECT * FROM PesajeEntity WHERE puntoId = :puntoId ORDER BY id DESC;
+
+getPesajesPendientes:
+SELECT * FROM PesajeEntity WHERE pendiente = 1 ORDER BY id ASC;
+
+getMinId:
+SELECT COALESCE(MIN(id), 0) - 1 FROM PesajeEntity;
+
+insertPesaje:
+INSERT OR REPLACE INTO PesajeEntity(id, puntoId, fechaHora, material, pesoBruto, tara, pesoNeto, operario, estadoTipo, motivoAnulacion, pendiente, observacion)
+VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);
+
+updatePesajeIdAfterSync:
+UPDATE PesajeEntity SET id = :nuevoId, pesoNeto = :nuevoPesoNeto, pendiente = 0 WHERE id = :oldId;
+
+anularPesajeLocal:
+UPDATE PesajeEntity SET estadoTipo = 'Anulado', motivoAnulacion = :motivo, pendiente = :pendiente WHERE id = :id;
+
+clearPesajesNotPending:
+DELETE FROM PesajeEntity WHERE pendiente = 0;
+
+clearAllPesajes:
+DELETE FROM PesajeEntity;
